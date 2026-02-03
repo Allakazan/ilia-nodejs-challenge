@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -19,6 +20,7 @@ import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { TransactionsService } from './services/transaction.service';
 import { Transaction, TransactionType } from 'src/entities/transaction.entity';
 import { BalanceService } from './services/balance.service';
+import { UserGrpcClientService } from '../grpc-client/services/user-grpc-client.service';
 
 @ApiTags('Transactions')
 @ApiBearerAuth()
@@ -27,6 +29,7 @@ export class TransactionsController {
   constructor(
     private readonly transactionsService: TransactionsService,
     private readonly balanceService: BalanceService,
+    private readonly userGrpcClientService: UserGrpcClientService,
   ) {}
 
   @ApiOperation({
@@ -34,23 +37,7 @@ export class TransactionsController {
     description: `
       Creates a new transaction with automatic retry support and concurrency control.
       
-      **Duplicate Detection**: The system automatically detects duplicate requests 
-      based on a fingerprint (user_id + type + amount + time window). If a similar 
-      transaction was created within the last 30 seconds, it will return the existing 
-      transaction instead of creating a duplicate.
-      
-      **Concurrency Control**: Uses database-level locks to prevent race conditions 
-      when multiple requests arrive simultaneously for the same user.
-      
-      **Automatic Retry**: Failed transactions due to temporary issues (deadlocks, 
-      serialization failures) are automatically retried up to 3 times with 
-      exponential backoff.
-      
-      **Balance Validation**: For DEBIT transactions, the system validates that 
-      the user has sufficient balance before processing. Uses row-level locks 
-      to prevent double spending.
-      
-      **Important**: This endpoint is safe to retry. If you receive a timeout or 
+      This endpoint is safe to retry. If you receive a timeout or 
       network error, you can safely retry the same request and the system will 
       detect and prevent duplicates.
     `,
@@ -92,10 +79,18 @@ export class TransactionsController {
   })
   @HttpCode(HttpStatus.OK)
   @Post()
-  createTransaction(
+  async createTransaction(
     @Body() createTransactionDto: CreateTransactionDto,
   ): Promise<Transaction> {
-    // TODO: Check if userId exists in the user service
+    const userValidation = await this.userGrpcClientService.validateUser(
+      createTransactionDto.user_id,
+    );
+
+    if (!userValidation.is_valid)
+      throw new BadRequestException(
+        `User validation failed: ${userValidation.message}`,
+      );
+
     return this.transactionsService.createTransaction(createTransactionDto);
   }
 

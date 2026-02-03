@@ -3,6 +3,10 @@
     "wallet-service/**/*.ts": [
       "yarn --cwd wallet-service lint",
       "yarn --cwd wallet-service format"
+    ],
+    "user-service/**/*.ts": [
+      "yarn --cwd user-service lint",
+      "yarn --cwd user-service format"
     ]
   },
   "devDependencies": {
