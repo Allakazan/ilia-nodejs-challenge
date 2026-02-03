@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  HttpException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -12,7 +13,7 @@ import {
   TransactionType,
 } from 'src/entities/transaction.entity';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
-import { DataSource, QueryRunner, Repository } from 'typeorm';
+import { DataSource, Not, QueryRunner, Repository } from 'typeorm';
 import { BalanceService } from './balance.service';
 import { ConfigService } from '@nestjs/config';
 import { generateRequestHash } from 'src/util/hash.util';
@@ -42,7 +43,7 @@ export class TransactionsService {
 
   private async findByRequestHash(hash: string): Promise<Transaction | null> {
     return this.transactionsRepository.findOne({
-      where: { request_hash: hash },
+      where: { request_hash: hash, status: Not(TransactionStatus.FAILED) },
     });
   }
 
@@ -139,6 +140,9 @@ export class TransactionsService {
       this.logger.error('Transaction creation failed', error);
 
       await this.saveFailedTransaction(dto, requestHash, error, retryCount);
+
+      // Re-throws if the error is an instance of HttpException
+      if (error instanceof HttpException) throw error;
 
       throw new InternalServerErrorException('Failed to process transaction');
     } finally {
