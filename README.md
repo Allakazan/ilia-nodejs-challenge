@@ -1,47 +1,260 @@
 # ília - Code Challenge NodeJS
-**English**
-##### Before we start ⚠️
-**Please create a fork from this repository**
 
-## The Challenge:
-One of the ília Digital verticals is Financial and to level your knowledge we will do a Basic Financial Application and for that we divided this Challenge in 2 Parts.
+That's my final solution for the ília code challenge, i gave my best to develop a robust, production-ready financial transaction system built with NestJS, featuring dual microservices architecture with gRPC communication.
 
-The first part is mandatory, which is to create a Wallet microservice to store the users' transactions, the second part is optional (*for Seniors, it's mandatory*) which is to create a Users Microservice with integration between the two microservices (Wallet and Users), using internal communications between them, that can be done in any of the following strategies: gRPC, REST, Kafka or via Messaging Queues and this communication must have a different security of the external application (JWT, SSL, ...), **Development in javascript (Node) is required.**
+---
 
-![diagram](diagram.png)
+## 🏗️ Architecture
 
-### General Instructions:
-## Part 1 - Wallet Microservice
+This project consists of two microservices:
 
-This microservice must be a digital Wallet where the user transactions will be stored 
+- **`user-service`**: HTTP REST API + gRPC server managing user data
+- **`wallet-service`**: HTTP REST API consuming user-service via gRPC for user and auth operations
 
-### The Application must have
+Each service has its own dedicated PostgreSQL database.
 
-    - Project setup documentation (readme.md).
-    - Application and Database running on a container (Docker, ...).
-    - This Microservice must receive HTTP Request.
-    - Have a dedicated database (Postgres, MySQL, Mongo, DynamoDB, ...).
-    - JWT authentication on all routes (endpoints) the PrivateKey must be ILIACHALLENGE (passed by env var).
-    - Configure the Microservice port to 3001. 
-    - Gitflow applied with Code Review in each step, open a feature/branch, create at least one pull request and merge it with Main(master deprecated), this step is important to simulate a team work and not just a commit.
+```
+┌─────────────────┐      gRPC       ┌─────────────────┐
+│  Wallet Service │ ◄──────────────► │  User Service   │
+│   (HTTP/REST)   │                  │ (HTTP + gRPC)   │
+└────────┬────────┘                  └────────┬────────┘
+         │                                    │
+         ▼                                    ▼
+   ┌──────────┐                        ┌──────────┐
+   │ Wallet   │                        │  User    │
+   │ Database │                        │ Database │
+   └──────────┘                        └──────────┘
+```
 
-## Part 2 - Microservice Users and Wallet Integration
+---
 
-### The Application must have:
+## 🚀 Features
 
-    - Project setup documentation (readme.md).
-    - Application and Database running on a container (Docker, ...).
-    - This Microservice must receive HTTP Request.   
-    - Have a dedicated database(Postgres, MySQL, Mongo, DynamoDB...), you may use an Auth service like AWS Cognito.
-    - JWT authentication on all routes (endpoints) the PrivateKey must be ILIACHALLENGE (passed by env var).
-    - Set the Microservice port to 3002. 
-    - Gitflow applied with Code Review in each step, open a feature/branch, create at least one pull request and merge it with Main(master deprecated), this step is important to simulate a teamwork and not just a commit.
-    - Internal Communication Security (JWT, SSL, ...), if it is JWT the PrivateKey must be ILIACHALLENGE_INTERNAL (passed by env var).
-    - Communication between Microservices using any of the following: gRPC, REST, Kafka or via Messaging Queues (update your readme with the instructions to run if using a Docker/Container environment).
+### 🔐 Authentication
+JWT-based authentication using Passport, designed for extensibility and production scalability.
 
-#### In the end, send us your fork repo updated. As soon as you finish, please let us know.
+### 💳 Transaction System
+Ledger-style transaction model with `CREDIT` and `DEBIT` operations.
 
-#### We are available to answer any questions.
+### 🛡️ Financial Safety Mechanisms
+
+The transaction API implements critical safeguards for financial systems:
+
+| Feature | Description |
+|---------|-------------|
+| **Idempotency** | Prevents duplicate transactions on retries using request fingerprinting |
+| **Concurrency Control** | Row-level locks prevent race conditions |
+| **Automatic Retry** | Handles temporary failures with exponential backoff (up to 3 attempts) |
+| **Double Spending Prevention** | Balance validation before processing debits |
+| **Transaction Isolation** | SERIALIZABLE level for maximum consistency |
+| **Complete Audit Trail** | Logs all attempts, including failures |
+
+#### Request Fingerprinting
+The system detects duplicates based on a fingerprint (`user_id + type + amount + time window`). If a similar transaction was created within the last 30 seconds, it returns the existing transaction instead of creating a duplicate.
+
+#### Balance Validation
+For `DEBIT` transactions, the system validates sufficient balance before processing, using row-level locks to prevent double spending.
+
+---
+
+## 🔄 Transaction State Machine
+
+```
+PENDING ──────┐
+     │        │
+     ▼        ▼
+COMPLETED  FAILED ──> ROLLED_BACK
+```
+
+- **`PENDING`**: Transaction being processed
+- **`COMPLETED`**: Successfully completed
+- **`FAILED`**: Failed after all retries
+- **`ROLLED_BACK`**: Manually reverted transaction
+
+---
+
+## 🔒 Locking Strategy
+
+**Pessimistic Locking** was chosen over Optimistic Locking.
+
+**Rationale**: 
+- Strong consistency guarantees
+- Zero conflicts
+- Zero unnecessary retries
+- In a banking ledger system, errors are not acceptable
+
+---
+
+## 🔁 Retry Mechanism
+
+Automatic retry with exponential backoff handles PostgreSQL serialization failures. When two concurrent transactions read the same data, PostgreSQL detects the conflict and throws a `serialization_failure (40001)`. The retry mechanism catches this, re-reads the updated balance, and safely rejects invalid operations.
+
+The safety comes from the combination of: **`SERIALIZABLE` isolation + automatic retry**
+
+---
+
+## 🧪 Code Quality
+
+### Linting & Formatting
+NestJS comes with built-in lint and format commands. **Husky** is configured with **lint-staged** to automatically run linting on every commit.
+
+---
+
+## 📦 gRPC Configuration
+
+Proto files are located outside the microservices directories (monorepo structure). In an ideal production scenario, these would be in a separate repository or use a federation solution.
+
+---
+
+## 🚢 Deployment
+
+Both services include a `Dockerfile.prod` to facilitate deployment pipelines on any cloud-based architecture (AWS, GCP, Azure, etc.).
+
+---
+
+## 📊 Observability
+
+**Terminus Health Check** is implemented for service health monitoring.
+
+**Production Recommendations**:
+- Integration with **Datadog** or **Sentry** for comprehensive monitoring
+- Distributed tracing
+- Log aggregation
+
+---
+
+## 🔐 Security (Production Considerations)
+
+While not implemented in this version due to time constraints, production deployments should include:
+
+- **Rate Limiting**: Prevent abuse and DDoS attacks
+- **CORS Configuration**: Proper cross-origin resource sharing policies
+- **API Key Management**: Secure key rotation
+- **Request Validation**: Input sanitization and validation
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js >= 18
+- Docker & Docker Compose
+- PostgreSQL (or use Docker)
+
+### Setup
+
+### Docker Setup
+
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd ilia-nodejs-challenge
+   ```
+
+2. **Configure environment variables**
+   
+   Run this command inside each service
+   
+   ```bash
+   cp .env.example .env
+   ```
+
+   Then create two secrets for `ILIACHALLENGE` and `ILIACHALLENGE_INTERNAL`
+
+   I generally use:
+
+   ```bash
+   node -e "console.log(require('crypto').randomBytes(255).toString('base64'));"
+   ```
+
+3. **Run Docker Compose**
+   ```bash
+   docker compose up -d --build
+   ```
+
+4. **Open on your URL**
+   ```
+   http://localhost:3001/api
+   http://localhost:3002/api
+   ```
+
+### Local Setup
+
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd ilia-nodejs-challenge
+   ```
+
+2. **Install dependencies**
+   ```bash
+   cd user-service && yarn install
+   cd ../wallet-service && yarn install
+   ```
+
+3. **Configure environment variables**
+   
+   Run this command inside each service
+   
+   ```bash
+   cp .env.example .env
+   ```
+
+   Then create two secrets for `ILIACHALLENGE` and `ILIACHALLENGE_INTERNAL`
+
+   I generally use:
+
+   ```bash
+   node -e "console.log(require('crypto').randomBytes(255).toString('base64'));"
+   ```
+
+4. **Start PostgreSQL databases**
+   ```bash
+   # Start both databases
+   docker-compose up -d postgres-user postgres-wallet
+   ```
+
+5. **Start the services**
+ 
+   ```bash
+   # Terminal 1 - User Service
+   cd user-service
+   yarn start:dev
+   
+   # Terminal 2 - Wallet Service
+   cd wallet-service
+   yarn start:dev
+   ```
+
+---
+
+## 📝 API Documentation
+
+Once the services are running:
+
+- **Wallet Service Swagger**: `http://localhost:3001/api`
+- **User Service Swagger**: `http://localhost:3002/api`
+- **Health Checks**: 
+  - Wallet: `http://localhost:3001/health`
+  - User: `http://localhost:3002/health`
+
+---
+
+## 🎯 Production Checklist
+
+- [ ] Configure proper database connection pooling
+- [ ] Set up monitoring (Datadog/Sentry)
+- [ ] Implement rate limiting
+- [ ] Configure CORS policies
+- [ ] Set up log aggregation
+- [ ] Enable SSL/TLS
+- [ ] Configure secrets management
+- [ ] Set up CI/CD pipelines
+- [ ] Implement database backups
+- [ ] Configure auto-scaling
 
 
-Happy coding! 🤓
+---
+
+**Built with ❤️ using NestJS, gRPC, and PostgreSQL**
