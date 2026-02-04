@@ -1,17 +1,13 @@
 
 FROM node:21-alpine
 
-# Working directory inside the container
-WORKDIR /usr/src/app
+WORKDIR /usr/src
+COPY user-service/package.json user-service/yarn.lock ./user-service/
 
-COPY package.json yarn.lock ./
+WORKDIR /usr/src/user-service
 RUN yarn install
 
-COPY . .
-
-RUN yarn build
-
+WORKDIR /usr/src
 EXPOSE 3002
 
-# Define the command to start the application
-CMD ["yarn", "start:prod"]
+CMD ["yarn", "start:dev"]

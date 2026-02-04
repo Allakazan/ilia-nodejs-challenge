@@ -1,0 +1,89 @@
+
+services:
+
+  app-user:
+    container_name: user-service
+    build:
+      context: .
+      dockerfile: user-service/Dockerfile
+    ports:
+      - "3002:3002"
+      - "5002:5002"
+    volumes:
+      - .:/usr/src
+      #- ./user-service:/usr/src/user-service
+      - /usr/src/user-service/node_modules
+    working_dir: /usr/src/user-service
+    depends_on:
+      postgres-user:
+        condition: service_healthy
+    # Override database host to work inside the container
+    environment:
+      DB_HOST: postgres-user
+      DB_PORT: 5432
+    env_file:
+      - ./user-service/.env
+
+  app-wallet:
+    container_name: wallet-service
+    build:
+      context: .
+      dockerfile: wallet-service/Dockerfile
+    ports:
+      - "3001:3001"
+    volumes:
+      - .:/usr/src
+      #- ./wallet-service:/usr/src/wallet-service
+      - /usr/src/wallet-service/node_modules
+    working_dir: /usr/src/wallet-service
+    depends_on:
+      postgres-wallet:
+        condition: service_healthy
+    # Override gRPC host to connect to user-service container
+    environment:
+      DB_HOST: postgres-wallet
+      DB_PORT: 5432
+      GRPC_HOST: app-user
+      GRPC_PORT: 5002
+    env_file:
+      - ./wallet-service/.env
+
+  postgres-user:
+    image: postgres:15-alpine
+    container_name: user_postgres
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h localhost -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    environment:
+      POSTGRES_DB: usersvcdb
+      POSTGRES_USER: usersvc
+      POSTGRES_PASSWORD: usersvc_pass
+    volumes:
+      - pgdata-user:/var/lib/postgresql/data
+    ports:
+      - '5433:5432'
+
+  postgres-wallet:
+    image: postgres:15-alpine
+    container_name: wallet_postgres
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h localhost -U postgres -p 5432"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    environment:
+      POSTGRES_DB: walletdb
+      POSTGRES_USER: walletuser
+      POSTGRES_PASSWORD: walletpass
+    volumes:
+      - pgdata-wallet:/var/lib/postgresql/data
+    ports:
+      - '5434:5432'
+
+volumes:
+  pgdata-user:
+  pgdata-wallet:
