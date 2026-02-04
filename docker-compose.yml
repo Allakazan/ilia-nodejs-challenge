@@ -53,7 +53,7 @@ services:
     container_name: user_postgres
     restart: always
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -h localhost -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -h localhost -U usersvc"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -71,7 +71,7 @@ services:
     container_name: wallet_postgres
     restart: always
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -h localhost -U postgres -p 5432"]
+      test: ["CMD-SHELL", "pg_isready -h localhost -U walletuser"]
       interval: 5s
       timeout: 5s
       retries: 5
