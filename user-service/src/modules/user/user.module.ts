@@ -4,9 +4,10 @@ import { User } from 'src/entities/user.entity';
 import { UserService } from './user.service';
 import { UserController } from './user.controller';
 import { UserGrpcController } from './user.grpc.controller';
+import { JwtModule } from '@nestjs/jwt';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User])],
+  imports: [TypeOrmModule.forFeature([User]), JwtModule.register({})],
   controllers: [UserController, UserGrpcController],
   providers: [UserService],
   exports: [UserService],

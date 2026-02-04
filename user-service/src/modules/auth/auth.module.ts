@@ -9,6 +9,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { TOKEN_CONFIG } from './constants/token.constant';
+import { AuthGrpcController } from './auth.grpc.controller';
 
 @Module({
   imports: [
@@ -23,7 +24,7 @@ import { TOKEN_CONFIG } from './constants/token.constant';
       }),
     }),
   ],
-  controllers: [AuthController],
+  controllers: [AuthController, AuthGrpcController],
   providers: [LocalStrategy, JwtStrategy, AuthService],
 })
 export class AuthModule {}

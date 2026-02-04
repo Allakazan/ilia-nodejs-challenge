@@ -7,6 +7,7 @@ import {
   HttpStatus,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -20,10 +21,12 @@ import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { TransactionsService } from './services/transaction.service';
 import { Transaction, TransactionType } from 'src/entities/transaction.entity';
 import { BalanceService } from './services/balance.service';
-import { UserGrpcClientService } from '../grpc-client/services/user-grpc-client.service';
+import { UserGrpcClientService } from './services/user-grpc-client.service';
+import { GrpcAuthGuard } from '../auth/guards/grpc-auth.guard';
 
 @ApiTags('Transactions')
 @ApiBearerAuth()
+@UseGuards(GrpcAuthGuard)
 @Controller('transactions')
 export class TransactionsController {
   constructor(
@@ -86,7 +89,7 @@ export class TransactionsController {
       createTransactionDto.user_id,
     );
 
-    if (!userValidation.is_valid)
+    if (!userValidation.isValid)
       throw new BadRequestException(
         `User validation failed: ${userValidation.message}`,
       );

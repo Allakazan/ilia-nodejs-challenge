@@ -1,11 +1,13 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 import configuration from './config/configuration';
 import { Transaction } from './entities/transaction.entity';
 import { TransactionModule } from './modules/transaction/transaction.module';
+import { AuthModule } from './modules/auth/auth.module';
 
 @Module({
   imports: [
@@ -28,6 +30,7 @@ import { TransactionModule } from './modules/transaction/transaction.module';
         retryDelay: 1000,
       }),
     }),
+    AuthModule,
     TransactionModule,
   ],
   controllers: [AppController],
