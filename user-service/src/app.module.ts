@@ -7,6 +7,7 @@ import configuration from './config/configuration';
 import { User } from './entities/user.entity';
 import { UserModule } from './modules/user/user.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { HealthModule } from './modules/health/health.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { AuthModule } from './modules/auth/auth.module';
         retryDelay: 1000,
       }),
     }),
+    HealthModule,
     UserModule,
     AuthModule,
   ],

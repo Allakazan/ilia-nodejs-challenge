@@ -8,6 +8,7 @@ import configuration from './config/configuration';
 import { Transaction } from './entities/transaction.entity';
 import { TransactionModule } from './modules/transaction/transaction.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { HealthModule } from './modules/health/health.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { AuthModule } from './modules/auth/auth.module';
         retryDelay: 1000,
       }),
     }),
+    HealthModule,
     AuthModule,
     TransactionModule,
   ],
