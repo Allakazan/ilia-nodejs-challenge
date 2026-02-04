@@ -4,11 +4,26 @@ import { Transaction } from 'src/entities/transaction.entity';
 import { TransactionsController } from './transaction.controller';
 import { TransactionsService } from './services/transaction.service';
 import { BalanceService } from './services/balance.service';
-import { GrpcClientModule } from '../grpc-client/grpc-client.module';
+import { UserGrpcClientService } from './services/user-grpc-client.service';
+import { ClientsModule, Transport } from '@nestjs/microservices';
+import { join } from 'path';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Transaction]), GrpcClientModule],
+  imports: [
+    TypeOrmModule.forFeature([Transaction]),
+    ClientsModule.register([
+      {
+        name: 'GRPC_USER_TOKEN',
+        transport: Transport.GRPC,
+        options: {
+          package: 'user',
+          protoPath: join(__dirname, '../../../../proto/user.proto'),
+          url: '0.0.0.0:5002',
+        },
+      },
+    ]),
+  ],
   controllers: [TransactionsController],
-  providers: [TransactionsService, BalanceService],
+  providers: [UserGrpcClientService, TransactionsService, BalanceService],
 })
 export class TransactionModule {}

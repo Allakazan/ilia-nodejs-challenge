@@ -9,6 +9,7 @@ async function bootstrap() {
     .setTitle('Wallet Service API')
     .setDescription('Wallet Microservice API Documentation')
     .setVersion('1.0')
+    .addBearerAuth()
     .build();
 
   const documentFactory = () => SwaggerModule.createDocument(app, config);

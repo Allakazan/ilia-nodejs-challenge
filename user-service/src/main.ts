@@ -19,8 +19,11 @@ async function bootstrap() {
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.GRPC,
     options: {
-      package: 'user',
-      protoPath: [join(__dirname, '../../proto/user.proto')],
+      package: ['user', 'auth'],
+      protoPath: [
+        join(__dirname, '../../proto/user.proto'),
+        join(__dirname, '../../proto/auth.proto'),
+      ],
       url: '0.0.0.0:5002',
       loader: {
         keepCase: true,
