@@ -3,9 +3,16 @@ import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { join } from 'path';
+import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  const configSvc = app.get(ConfigService);
+
+  const port = configSvc.get<number>('port');
+  const grpcConfig = configSvc.get<{ host: string; port: number }>('grpc');
+
   const config = new DocumentBuilder()
     .setTitle('User Service API')
     .setDescription('User Microservice API Documentation')
@@ -25,7 +32,7 @@ async function bootstrap() {
           join(__dirname, '../../proto/user.proto'),
           join(__dirname, '../../proto/auth.proto'),
         ],
-        url: '0.0.0.0:5002',
+        url: `${grpcConfig.host}:${grpcConfig.port}`,
         loader: {
           keepCase: true,
           longs: String,
@@ -39,9 +46,9 @@ async function bootstrap() {
   );
 
   await app.startAllMicroservices();
-  await app.listen(3002);
+  await app.listen(port);
 
-  console.log('HTTP running on http://localhost:3002');
-  console.log('gRPC running on 0.0.0.0:5002');
+  console.log(`HTTP running on http://localhost:${port}`);
+  console.log(`gRPC running on ${grpcConfig.host}:${grpcConfig.port}`);
 }
 bootstrap();
