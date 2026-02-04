@@ -1,3 +1,4 @@
+import { Metadata } from '@grpc/grpc-js';
 import { Observable } from 'rxjs';
 
 export interface AuthUser {
@@ -11,5 +12,8 @@ export interface AuthResponse {
 }
 
 export interface AuthServiceClient {
-  Authenticate(data: { token: string }): Observable<AuthResponse>;
+  Authenticate(
+    data: { token: string },
+    metadata: Metadata,
+  ): Observable<AuthResponse>;
 }

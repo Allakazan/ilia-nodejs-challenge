@@ -5,12 +5,16 @@ import {
   UserServiceClient,
   ValidateUserResponse,
 } from '../interfaces/user-grpc.interface';
+import { AuthInternalService } from 'src/modules/auth-internal/auth-internal.service';
 
 @Injectable()
 export class UserGrpcClientService implements OnModuleInit {
   private userGrpcService: UserServiceClient;
 
-  constructor(@Inject('GRPC_USER_TOKEN') private client: ClientGrpc) {}
+  constructor(
+    private readonly authInternalService: AuthInternalService,
+    @Inject('GRPC_USER_TOKEN') private client: ClientGrpc,
+  ) {}
 
   onModuleInit() {
     this.userGrpcService =
@@ -19,8 +23,10 @@ export class UserGrpcClientService implements OnModuleInit {
 
   async validateUser(userId: string): Promise<ValidateUserResponse> {
     try {
+      const metadata = this.authInternalService.getAuthMetadata();
+
       const result = await firstValueFrom(
-        this.userGrpcService.ValidateUser({ userId }),
+        this.userGrpcService.ValidateUser({ userId }, metadata),
       );
       return result;
     } catch (error) {

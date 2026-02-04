@@ -4,6 +4,7 @@ import { AuthGrpcClientService } from './auth-grpc-client.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { join } from 'path';
 import { GrpcAuthStrategy } from './strategies/grpc-auth.strategy';
+import { AuthInternalModule } from '../auth-internal/auth-internal.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { GrpcAuthStrategy } from './strategies/grpc-auth.strategy';
       },
     ]),
     PassportModule.register({ defaultStrategy: 'grpc-auth' }),
+    AuthInternalModule,
   ],
   providers: [GrpcAuthStrategy, AuthGrpcClientService],
 })

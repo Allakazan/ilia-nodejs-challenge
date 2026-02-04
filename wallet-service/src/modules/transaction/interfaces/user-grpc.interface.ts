@@ -1,3 +1,4 @@
+import { Metadata } from '@grpc/grpc-js';
 import { Observable } from 'rxjs';
 
 export interface ValidateUserResponse {
@@ -12,5 +13,8 @@ export interface ValidateUserResponse {
 }
 
 export interface UserServiceClient {
-  ValidateUser(data: { userId: string }): Observable<ValidateUserResponse>;
+  ValidateUser(
+    data: { userId: string },
+    metadata: Metadata,
+  ): Observable<ValidateUserResponse>;
 }

@@ -7,6 +7,7 @@ import { BalanceService } from './services/balance.service';
 import { UserGrpcClientService } from './services/user-grpc-client.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { join } from 'path';
+import { AuthInternalModule } from '../auth-internal/auth-internal.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { join } from 'path';
         },
       },
     ]),
+    AuthInternalModule,
   ],
   controllers: [TransactionsController],
   providers: [UserGrpcClientService, TransactionsService, BalanceService],

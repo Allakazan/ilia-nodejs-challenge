@@ -5,12 +5,16 @@ import {
   AuthServiceClient,
   AuthResponse,
 } from './interface/auth-grpc.interface';
+import { AuthInternalService } from '../auth-internal/auth-internal.service';
 
 @Injectable()
 export class AuthGrpcClientService implements OnModuleInit {
   private authGrpcService: AuthServiceClient;
 
-  constructor(@Inject('GRPC_AUTH_TOKEN') private client: ClientGrpc) {}
+  constructor(
+    private readonly authInternalService: AuthInternalService,
+    @Inject('GRPC_AUTH_TOKEN') private client: ClientGrpc,
+  ) {}
 
   onModuleInit() {
     this.authGrpcService =
@@ -19,8 +23,10 @@ export class AuthGrpcClientService implements OnModuleInit {
 
   async authenticate(token: string): Promise<AuthResponse> {
     try {
+      const metadata = this.authInternalService.getAuthMetadata();
+
       const response = await firstValueFrom(
-        this.authGrpcService.Authenticate({ token }),
+        this.authGrpcService.Authenticate({ token }, metadata),
       );
 
       return response;

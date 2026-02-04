@@ -1,11 +1,13 @@
-import { Controller, Logger } from '@nestjs/common';
+import { Controller, Logger, UseInterceptors } from '@nestjs/common';
 import { UserService } from './user.service';
 import { GrpcMethod } from '@nestjs/microservices';
 import {
   ValidateUserRequest,
   ValidateUserResponse,
 } from './interfaces/user-grpc.interface';
+import { GrpcJwtInterceptor } from 'src/common/interceptors/grpc-jwt.interceptor';
 
+@UseInterceptors(GrpcJwtInterceptor)
 @Controller()
 export class UserGrpcController {
   private logger: Logger = new Logger('UserGrpcController');

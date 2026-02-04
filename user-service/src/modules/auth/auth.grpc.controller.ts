@@ -1,11 +1,13 @@
-import { Controller, Logger } from '@nestjs/common';
+import { Controller, Logger, UseInterceptors } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { JwtService } from '@nestjs/jwt';
 
 import { AuthRequest, AuthResponse } from './interfaces/auth-grpc.interface';
 import { AuthPayload } from './interfaces/auth.interface';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { GrpcJwtInterceptor } from 'src/common/interceptors/grpc-jwt.interceptor';
 
+@UseInterceptors(GrpcJwtInterceptor)
 @Controller()
 export class AuthGrpcController {
   private logger: Logger = new Logger('AuthGrpcController');

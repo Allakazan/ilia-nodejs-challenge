@@ -1,6 +1,10 @@
 export default () => ({
   env: process.env.NODE_ENV || 'development',
   port: parseInt(process.env.PORT, 10) || 3001,
+  auth: {
+    secret: process.env.ILIACHALLENGE,
+    secretInternal: process.env.ILIACHALLENGE_INTERNAL,
+  },
   postgres: {
     host: process.env.DB_HOST,
     port: parseInt(process.env.DB_PORT, 10) || 5432,
